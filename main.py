@@ -17,35 +17,47 @@ yesterday_str = yesterday.strftime("%Y-%m-%d")
 # =========================
 # HEUTIGE SPIELE
 # =========================
-today_url = f"https://www.thesportsdb.com/api/v1/json/3/eventsday.php?d={today_str}&s=Soccer"
+# =========================
+# API FOOTBALL
+# =========================
 
-today_data = requests.get(today_url).json()
+headers = {
+    "x-rapidapi-key": os.environ["FOOTBALL_API_KEY"],
+    "x-rapidapi-host": "api-football-v1.p.rapidapi.com"
+}
+
+# Bundesliga = league 78
+
+today_url = f"https://api-football-v1.p.rapidapi.com/v3/fixtures?league=78&season=2025&date={today_str}"
+
+today_response = requests.get(today_url, headers=headers).json()
 
 today_games = ""
 
-if today_data["events"]:
-    for game in today_data["events"][:10]:
-        today_games += f"{game['strHomeTeam']} vs {game['strAwayTeam']}\n"
+for game in today_response["response"]:
+    home = game["teams"]["home"]["name"]
+    away = game["teams"]["away"]["name"]
+
+    today_games += f"{home} vs {away}\n"
 
 # =========================
-# GESTRIGE SPIELE
+# GESTERN
 # =========================
-yesterday_url = f"https://www.thesportsdb.com/api/v1/json/3/eventsday.php?d={yesterday_str}&s=Soccer"
 
-yesterday_data = requests.get(yesterday_url).json()
+yesterday_url = f"https://api-football-v1.p.rapidapi.com/v3/fixtures?league=78&season=2025&date={yesterday_str}"
+
+yesterday_response = requests.get(yesterday_url, headers=headers).json()
 
 yesterday_games = ""
 
-if yesterday_data["events"]:
-    for game in yesterday_data["events"][:10]:
-        home = game['strHomeTeam']
-        away = game['strAwayTeam']
+for game in yesterday_response["response"]:
+    home = game["teams"]["home"]["name"]
+    away = game["teams"]["away"]["name"]
 
-        hs = game.get('intHomeScore')
-        aw = game.get('intAwayScore')
+    hs = game["goals"]["home"]
+    aw = game["goals"]["away"]
 
-        yesterday_games += f"{home} {hs}:{aw} {away}\n"
-
+    yesterday_games += f"{home} {hs}:{aw} {away}\n"
 # =========================
 # KI ZUSAMMENFASSUNG
 # =========================
