@@ -8,6 +8,7 @@ import os
 # =========================
 # DATUM
 # =========================
+
 today = datetime.today()
 yesterday = today - timedelta(days=1)
 
@@ -15,122 +16,106 @@ today_str = today.strftime("%Y-%m-%d")
 yesterday_str = yesterday.strftime("%Y-%m-%d")
 
 # =========================
-# HEUTIGE SPIELE
-# =========================
-
-# Bundesliga = league 78
-
-# =========================
-# API FOOTBALL
+# FOOTBALL DATA API
 # =========================
 
 headers = {
-    "x-rapidapi-key": os.environ["FOOTBALL_API_KEY"],
-    "x-rapidapi-host": "api-football-v1.p.rapidapi.com"
+    "X-Auth-Token": os.environ["FOOTBALL_API_KEY"]
 }
 
-current_season = datetime.today().year
+url = "https://api.football-data.org/v4/matches"
 
-# Mehrere wichtige Ligen
-leagues = [78, 39, 140, 2]
+response = requests.get(url, headers=headers).json()
 
 today_games = ""
 yesterday_games = ""
 
 # =========================
-# HEUTE
+# SPIELE SORTIEREN
 # =========================
 
-for league in leagues:
+for match in response.get("matches", []):
 
-    today_url = (
-        f"https://api-football-v1.p.rapidapi.com/v3/fixtures"
-        f"?league={league}&season={current_season}&date={today_str}"
-    )
+    utc_date = match["utcDate"][:10]
 
-    response = requests.get(today_url, headers=headers).json()
+    home = match["homeTeam"]["name"]
+    away = match["awayTeam"]["name"]
 
-    for game in response.get("response", []):
-        home = game["teams"]["home"]["name"]
-        away = game["teams"]["away"]["name"]
+    # Heute
+    if utc_date == today_str:
+        today_games += f"⚽ {home} vs {away}\n"
 
-        today_games += f"{home} vs {away}\n"
+    # Gestern
+    if utc_date == yesterday_str:
 
-# =========================
-# GESTERN
-# =========================
+        home_score = match["score"]["fullTime"]["home"]
+        away_score = match["score"]["fullTime"]["away"]
 
-for league in leagues:
-
-    yesterday_url = (
-        f"https://api-football-v1.p.rapidapi.com/v3/fixtures"
-        f"?league={league}&season={current_season}&date={yesterday_str}"
-    )
-
-    response = requests.get(yesterday_url, headers=headers).json()
-
-    for game in response.get("response", []):
-        home = game["teams"]["home"]["name"]
-        away = game["teams"]["away"]["name"]
-
-        hs = game["goals"]["home"]
-        aw = game["goals"]["away"]
-
-        yesterday_games += f"{home} {hs}:{aw} {away}\n"
+        yesterday_games += (
+            f"✅ {home} {home_score}:{away_score} {away}\n"
+        )
 
 # Falls nichts gefunden
 if today_games == "":
-    today_games = "Keine Spiele gefunden."
+    today_games = "Keine Spiele gefunden.\n"
 
 if yesterday_games == "":
-    yesterday_games = "Keine Ergebnisse gefunden."
-    
+    yesterday_games = "Keine Ergebnisse gefunden.\n"
+
+# =========================
+# EMAIL TEXT
+# =========================
+
+message = f"""
+📅 HEUTE ({today_str})
+
+{today_games}
+
+📅 GESTERN ({yesterday_str})
+
+{yesterday_games}
+"""
+
 # =========================
 # KI ZUSAMMENFASSUNG
 # =========================
+
 client = Groq(
     api_key=os.environ["GROQ_API_KEY"]
 )
 
-prompt = f"""
-Fasse diese Fußballspiele kurz auf Deutsch zusammen.
-
-Gestern, Datum:
-{yesterday_games}
-
-Heute, Datum:
-{today_games}
-"""
-
-response = client.chat.completions.create(
+ai_response = client.chat.completions.create(
     model="llama-3.3-70b-versatile",
     messages=[
         {
             "role": "user",
-            "content": prompt
+            "content": f"Fasse diese Fußballspiele kurz auf Deutsch zusammen:\n{message}"
         }
     ]
 )
 
-summary = response.choices[0].message.content
+summary = ai_response.choices[0].message.content
+
+final_message = message + "\n\n🧠 KI ZUSAMMENFASSUNG:\n\n" + summary
 
 # =========================
 # EMAIL SENDEN
 # =========================
+
 sender = os.environ["EMAIL_USER"]
 password = os.environ["EMAIL_PASS"]
-receiver = os.environ["EMAIL_USER"]
 
-msg = MIMEText(summary)
+msg = MIMEText(final_message)
 
 msg["Subject"] = "⚽ Fußball Update"
 msg["From"] = sender
-msg["To"] = receiver
+msg["To"] = sender
 
 server = smtplib.SMTP_SSL("smtp.gmail.com", 465)
 
 server.login(sender, password)
 server.send_message(msg)
+
 server.quit()
 
 print("Email gesendet!")
