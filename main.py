@@ -181,7 +181,7 @@ ai_response = client.chat.completions.create(
 
 summary = ai_response.choices[0].message.content
 
-final_message = message + "\n\n🧠 KI ZUSAMMENFASSUNG:\n\n" + summary
+final_message = "\n\n🧠 KI ZUSAMMENFASSUNG:\n\n" + summary
 
 # =========================
 # EMAIL SENDEN
