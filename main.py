@@ -17,6 +17,9 @@ yesterday_str = yesterday.strftime("%Y-%m-%d")
 # =========================
 # HEUTIGE SPIELE
 # =========================
+
+# Bundesliga = league 78
+
 # =========================
 # API FOOTBALL
 # =========================
@@ -26,15 +29,21 @@ headers = {
     "x-rapidapi-host": "api-football-v1.p.rapidapi.com"
 }
 
-# Bundesliga = league 78
+# Bundesliga = 78
+# Saison automatisch
 
-today_url = f"https://api-football-v1.p.rapidapi.com/v3/fixtures?league=78&season=2025&date={today_str}"
+current_season = datetime.today().year
+
+today_url = (
+    f"https://api-football-v1.p.rapidapi.com/v3/fixtures"
+    f"?league=78&season={current_season}&date={today_str}"
+)
 
 today_response = requests.get(today_url, headers=headers).json()
 
 today_games = ""
 
-for game in today_response["response"]:
+for game in today_response.get("response", []):
     home = game["teams"]["home"]["name"]
     away = game["teams"]["away"]["name"]
 
@@ -44,13 +53,16 @@ for game in today_response["response"]:
 # GESTERN
 # =========================
 
-yesterday_url = f"https://api-football-v1.p.rapidapi.com/v3/fixtures?league=78&season=2025&date={yesterday_str}"
+yesterday_url = (
+    f"https://api-football-v1.p.rapidapi.com/v3/fixtures"
+    f"?league=78&season={current_season}&date={yesterday_str}"
+)
 
 yesterday_response = requests.get(yesterday_url, headers=headers).json()
 
 yesterday_games = ""
 
-for game in yesterday_response["response"]:
+for game in yesterday_response.get("response", []):
     home = game["teams"]["home"]["name"]
     away = game["teams"]["away"]["name"]
 
@@ -58,6 +70,7 @@ for game in yesterday_response["response"]:
     aw = game["goals"]["away"]
 
     yesterday_games += f"{home} {hs}:{aw} {away}\n"
+    
 # =========================
 # KI ZUSAMMENFASSUNG
 # =========================
