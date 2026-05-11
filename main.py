@@ -29,47 +29,61 @@ headers = {
     "x-rapidapi-host": "api-football-v1.p.rapidapi.com"
 }
 
-# Bundesliga = 78
-# Saison automatisch
-
 current_season = datetime.today().year
 
-today_url = (
-    f"https://api-football-v1.p.rapidapi.com/v3/fixtures"
-    f"?league=78&season={current_season}&date={today_str}"
-)
-
-today_response = requests.get(today_url, headers=headers).json()
+# Mehrere wichtige Ligen
+leagues = [78, 39, 140, 2]
 
 today_games = ""
+yesterday_games = ""
 
-for game in today_response.get("response", []):
-    home = game["teams"]["home"]["name"]
-    away = game["teams"]["away"]["name"]
+# =========================
+# HEUTE
+# =========================
 
-    today_games += f"{home} vs {away}\n"
+for league in leagues:
+
+    today_url = (
+        f"https://api-football-v1.p.rapidapi.com/v3/fixtures"
+        f"?league={league}&season={current_season}&date={today_str}"
+    )
+
+    response = requests.get(today_url, headers=headers).json()
+
+    for game in response.get("response", []):
+        home = game["teams"]["home"]["name"]
+        away = game["teams"]["away"]["name"]
+
+        today_games += f"{home} vs {away}\n"
 
 # =========================
 # GESTERN
 # =========================
 
-yesterday_url = (
-    f"https://api-football-v1.p.rapidapi.com/v3/fixtures"
-    f"?league=78&season={current_season}&date={yesterday_str}"
-)
+for league in leagues:
 
-yesterday_response = requests.get(yesterday_url, headers=headers).json()
+    yesterday_url = (
+        f"https://api-football-v1.p.rapidapi.com/v3/fixtures"
+        f"?league={league}&season={current_season}&date={yesterday_str}"
+    )
 
-yesterday_games = ""
+    response = requests.get(yesterday_url, headers=headers).json()
 
-for game in yesterday_response.get("response", []):
-    home = game["teams"]["home"]["name"]
-    away = game["teams"]["away"]["name"]
+    for game in response.get("response", []):
+        home = game["teams"]["home"]["name"]
+        away = game["teams"]["away"]["name"]
 
-    hs = game["goals"]["home"]
-    aw = game["goals"]["away"]
+        hs = game["goals"]["home"]
+        aw = game["goals"]["away"]
 
-    yesterday_games += f"{home} {hs}:{aw} {away}\n"
+        yesterday_games += f"{home} {hs}:{aw} {away}\n"
+
+# Falls nichts gefunden
+if today_games == "":
+    today_games = "Keine Spiele gefunden."
+
+if yesterday_games == "":
+    yesterday_games = "Keine Ergebnisse gefunden."
     
 # =========================
 # KI ZUSAMMENFASSUNG
@@ -81,10 +95,10 @@ client = Groq(
 prompt = f"""
 Fasse diese Fußballspiele kurz auf Deutsch zusammen.
 
-Gestern:
+Gestern, Datum:
 {yesterday_games}
 
-Heute:
+Heute, Datum:
 {today_games}
 """
 
