@@ -97,10 +97,7 @@ ai_response = client.chat.completions.create(
     messages=[
         {
             "role": "user",
-            "content": f"
-            Fasse diese Fußballspiele kurz wo die statt findet,
-            welche runde ist das im Liga, 
-            und am Ende sag in welche Liga würde dieses Team platziert sein auf Deutsch zusammen:\n{message}"
+            "content": f"Fasse diese Fußballspiele kurz wo die statt findet, welche runde ist das im Liga, und am Ende sag in welche Liga würde dieses Team platziert sein auf Deutsch zusammen:\n{message}"
         }
     ]
 )
