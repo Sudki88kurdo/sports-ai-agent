@@ -23,7 +23,7 @@ headers = {
     "X-Auth-Token": os.environ["FOOTBALL_API_KEY"]
 }
 
-url = "https://api.football-data.org/v4/matches"
+url = "https://api.football-data.org/v4/matches?status=FINISHED,SCHEDULED"
 
 response = requests.get(url, headers=headers).json()
 
@@ -41,12 +41,21 @@ for match in response.get("matches", []):
     home = match["homeTeam"]["name"]
     away = match["awayTeam"]["name"]
 
-    # Heute
+    status = match["status"]
+
+    # =========================
+    # HEUTE
+    # =========================
+
     if utc_date == today_str:
+
         today_games += f"⚽ {home} vs {away}\n"
 
-    # Gestern
-    if utc_date == yesterday_str:
+    # =========================
+    # GESTERN
+    # =========================
+
+    if utc_date == yesterday_str and status == "FINISHED":
 
         home_score = match["score"]["fullTime"]["home"]
         away_score = match["score"]["fullTime"]["away"]
@@ -54,7 +63,6 @@ for match in response.get("matches", []):
         yesterday_games += (
             f"✅ {home} {home_score}:{away_score} {away}\n"
         )
-
 # Falls nichts gefunden
 if today_games == "":
     today_games = "Keine Spiele gefunden.\n"
