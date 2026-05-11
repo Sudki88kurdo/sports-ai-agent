@@ -97,8 +97,32 @@ ai_response = client.chat.completions.create(
     messages=[
         {
             "role": "user",
-            "content": f"Fasse diese Fußballspiele kurz wo die statt findet, welche runde ist das im Liga, und am Ende sag in welche Liga würde dieses Team platziert sein auf Deutsch zusammen:\n{message}"
-        }
+            "content": f"""
+            Analysiere diese Fußballspiele auf Deutsch.
+            
+            Für jedes Spiel schreibe:
+            
+            - welche Teams spielen
+            - in welchem Stadion gespielt wird
+            - welcher Spieltag oder welche Runde das ist
+            - das Ergebnis falls vorhanden
+            - die aktuelle Platzierung der Teams in der Liga
+            
+            Schreibe alles übersichtlich und gut lesbar.
+            
+            Beispiel:
+            
+            ⚽ Dortmund vs Bayern
+            🏟 Stadion: Signal Iduna Park
+            📅 Spieltag: 32
+            📊 Tabellenplätze:
+            - Dortmund: Platz 4
+            - Bayern: Platz 1
+            
+            Hier sind die Spieldaten:
+            
+            {message}
+            """        }
     ]
 )
 
