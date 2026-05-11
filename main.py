@@ -23,18 +23,44 @@ headers = {
     "X-Auth-Token": os.environ["FOOTBALL_API_KEY"]
 }
 
-url = "https://api.football-data.org/v4/matches?status=FINISHED,SCHEDULED"
+# Spiele holen
+matches_url = "https://api.football-data.org/v4/matches"
 
-response = requests.get(url, headers=headers).json()
+matches_response = requests.get(
+    matches_url,
+    headers=headers
+).json()
+
+# Bundesliga Tabelle holen
+standings_url = (
+    "https://api.football-data.org/v4/competitions/BL1/standings"
+)
+
+standings_response = requests.get(
+    standings_url,
+    headers=headers
+).json()
+
+# Tabellenplätze speichern
+team_positions = {}
+
+table = standings_response["standings"][0]["table"]
+
+for team in table:
+
+    name = team["team"]["name"]
+    position = team["position"]
+
+    team_positions[name] = position
 
 today_games = ""
 yesterday_games = ""
 
 # =========================
-# SPIELE SORTIEREN
+# SPIELE
 # =========================
 
-for match in response.get("matches", []):
+for match in matches_response.get("matches", []):
 
     utc_date = match["utcDate"][:10]
 
@@ -43,13 +69,30 @@ for match in response.get("matches", []):
 
     status = match["status"]
 
+    competition = match["competition"]["name"]
+
+    matchday = match.get("matchday", "?")
+
+    home_position = team_positions.get(home, "?")
+    away_position = team_positions.get(away, "?")
+
     # =========================
     # HEUTE
     # =========================
 
     if utc_date == today_str:
 
-        today_games += f"⚽ {home} vs {away}\n"
+        today_games += f"""
+⚽ {home} vs {away}
+
+🏆 Liga: {competition}
+📅 Spieltag: {matchday}
+
+📊 Tabellenplätze:
+- {home}: Platz {home_position}
+- {away}: Platz {away_position}
+
+"""
 
     # =========================
     # GESTERN
@@ -60,15 +103,25 @@ for match in response.get("matches", []):
         home_score = match["score"]["fullTime"]["home"]
         away_score = match["score"]["fullTime"]["away"]
 
-        yesterday_games += (
-            f"✅ {home} {home_score}:{away_score} {away}\n"
-        )
+        yesterday_games += f"""
+✅ {home} {home_score}:{away_score} {away}
+
+🏆 Liga: {competition}
+📅 Spieltag: {matchday}
+
+📊 Tabellenplätze:
+- {home}: Platz {home_position}
+- {away}: Platz {away_position}
+
+"""
+
 # Falls nichts gefunden
 if today_games == "":
     today_games = "Keine Spiele gefunden.\n"
 
 if yesterday_games == "":
     yesterday_games = "Keine Ergebnisse gefunden.\n"
+
 
 # =========================
 # EMAIL TEXT
